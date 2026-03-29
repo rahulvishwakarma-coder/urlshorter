@@ -14,7 +14,8 @@ import connectDB from "./src/db/index.js";
 connectDB();
 
 app.get('/', (req, res) => {
-  res.json({ message: 'hello this is urlshorter application' });
+  res.redirect("https://github.com/rahulvishwakarma-coder/urlshorter");
+  // res.json({ message: 'hello this is urlshorter application' });
 });
 app.get("/:shortCode",redirectUser)
 app.use("/api/url",urlRouter);
