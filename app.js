@@ -14,7 +14,7 @@ import connectDB from "./src/db/index.js";
 connectDB();
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Hello from Express on Vercel!' });
+  res.json({ message: 'hello this is urlshorter application' });
 });
 app.get("/:shortCode",redirectUser)
 app.use("/api/url",urlRouter);
