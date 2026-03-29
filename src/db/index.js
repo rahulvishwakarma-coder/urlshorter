@@ -1,15 +1,30 @@
 import mongoose from "mongoose";
-import {DB_NAME} from "../../constants.js"
 
+const MONGODB_URL = process.env.MONGODB_URL;
 
-const connectDB = async () =>{
-    try {
-        const mongodbinstance = await mongoose.connect(`${process.env.MONGODB_URL}/${DB_NAME}`);
-        console.log(`Database connection successfully on host ${mongodbinstance.connection.host}`)
-    } catch (error) {
-        console.log(`error occurs during mongodb connection ${error}`)
-        throw new Error("DB connection failed");
-    }
+// global cache
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
 }
+
+const connectDB = async () => {
+  if (cached.conn) {
+    console.log("Using existing DB connection");
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URL).then((mongooseInstance) => {
+      return mongooseInstance;
+    });
+  }
+
+  cached.conn = await cached.promise;
+  console.log("New DB connection established");
+
+  return cached.conn;
+};
 
 export default connectDB;
