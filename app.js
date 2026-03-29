@@ -10,6 +10,9 @@ app.use(express.json());
 import {urlRouter} from "./src/routes/url.routes.js";
 import {redirectUser} from "./src/controllers/shorten.controller.js"
 
+app.get('/', (req, res) => {
+  res.json({ message: 'Hello from Express on Vercel!' });
+});
 app.get("/:shortCode",redirectUser)
 app.use("/api/url",urlRouter);
 
