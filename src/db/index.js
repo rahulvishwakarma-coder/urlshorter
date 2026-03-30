@@ -10,6 +10,11 @@ if (!cached) {
 }
 
 const connectDB = async () => {
+  if (!MONGODB_URL) {
+    console.error("MONGODB_URL is not defined. Please set it in your environment variables.");
+    throw new Error("MONGODB_URL is not defined.");
+  }
+
   if (cached.conn) {
     console.log("Using existing DB connection");
     return cached.conn;
