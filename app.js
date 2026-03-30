@@ -11,6 +11,9 @@ app.use(express.json());
 
 import {urlRouter} from "./src/routes/url.routes.js";
 import {redirectUser} from "./src/controllers/shorten.controller.js"
+import connectDB from "./src/db/index.js";
+
+connectDB();
 
 app.get('/', (req, res) => {
   res.redirect("https://github.com/rahulvishwakarma-coder/urlshorter");
