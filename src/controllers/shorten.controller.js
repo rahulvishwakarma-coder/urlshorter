@@ -1,5 +1,5 @@
 import {UrlModel} from "../models/url.models.js"
-import {urlCache} from "../utils/localCache.js"
+import redis from "../utils/redisCache.js";
 
 // helper
 const generateShortCode = (length = 6) => {
@@ -104,7 +104,7 @@ export const redirectUser = async (req, res) => {
     }
 
     // check in cached memory
-    const originalUrl = urlCache.get(code);
+    const originalUrl = await redis.get(code);
     console.log(originalUrl);
 
     if(originalUrl){
@@ -119,7 +119,7 @@ export const redirectUser = async (req, res) => {
     }
 
     // store url in cached
-    urlCache.set(url.shortCode,url.originalUrl);
+    await redis.set(url.shortCode,url.originalUrl);
 
     // 4. expiry check
     if (url.expiresAt && url.expiresAt < new Date()) {
