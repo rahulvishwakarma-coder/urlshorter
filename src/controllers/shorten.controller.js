@@ -1,4 +1,5 @@
 import {UrlModel} from "../models/url.models.js"
+import {urlCache} from "../utils/localCache.js"
 
 // helper
 const generateShortCode = (length = 6) => {
@@ -102,6 +103,14 @@ export const redirectUser = async (req, res) => {
       return res.status(403).json({ message: "Permission denied" });
     }
 
+    // check in cached memory
+    const originalUrl = urlCache.get(code);
+    console.log(originalUrl);
+
+    if(originalUrl){
+      return res.redirect(originalUrl);
+    }
+
     // 3. find in DB
     const url = await UrlModel.findOne({ shortCode: code });
 
@@ -109,14 +118,17 @@ export const redirectUser = async (req, res) => {
       return res.status(404).json({ message: "URL not found" });
     }
 
+    // store url in cached
+    urlCache.set(url.shortCode,url.originalUrl);
+
     // 4. expiry check
     if (url.expiresAt && url.expiresAt < new Date()) {
       return res.status(410).json({ message: "Link expired" });
     }
 
     // 5. increment clicks
-    url.clicks += 1;
-    await url.save();
+    // url.clicks += 1;
+    // await url.save();
 
     // 6. redirect
     return res.redirect(url.originalUrl);
