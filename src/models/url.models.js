@@ -18,6 +18,11 @@ const urlSchema = new mongoose.Schema({
         type:Number,
         default:0
     },
+    creator:{
+        type:mongoose.Types.ObjectId,
+        ref:"User",
+        required:true
+    },
     expiresAt:{
         type:Date,
     }

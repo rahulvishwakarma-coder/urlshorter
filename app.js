@@ -1,16 +1,19 @@
 import express from "express"
 import cors from "cors"
+import cookieParser from "cookie-parser";
 const app = express();
 
 //setup middlewares
 
 app.use(cors());
+app.use(cookieParser());
 app.use(express.json());
 
 // import routers
 
 import {urlRouter} from "./src/routes/url.routes.js";
 import {redirectUser} from "./src/controllers/shorten.controller.js"
+import userRouter from "./src/routes/user.routes.js";
 import connectDB from "./src/db/index.js";
 
 connectDB();
@@ -21,5 +24,6 @@ app.get('/', (req, res) => {
 });
 app.get("/:shortCode",redirectUser)
 app.use("/api/url",urlRouter);
+app.use("/api/auth/v1",userRouter);
 
 export default app;
