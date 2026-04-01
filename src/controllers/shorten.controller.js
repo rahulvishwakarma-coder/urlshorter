@@ -1,4 +1,4 @@
-import {UrlModel} from "../models/url.models.js"
+import { UrlModel } from "../models/url.models.js"
 import redis from "../utils/redisCache.js";
 
 // helper
@@ -19,19 +19,19 @@ const isValidCustomCode = (input) => {
 };
 
 export const updateClicks = async (shortCode) => {
-    try {
-        // $inc is ATOMIC - it handles the math inside the database
-        const updatedUrl = await UrlModel.findOneAndUpdate(
-            { shortCode }, 
-            { $inc: { clicks: 1 } },
-            { new: true } // Returns the updated document instead of the old one
-        );
+  try {
+    // $inc is ATOMIC - it handles the math inside the database
+    const updatedUrl = await UrlModel.findOneAndUpdate(
+      { shortCode },
+      { $inc: { clicks: 1 } },
+      { new: true } // Returns the updated document instead of the old one
+    );
 
-        return updatedUrl;
-    } catch (error) {
-        console.error("Error updating clicks:", error);
-        return null;
-    }
+    return updatedUrl;
+  } catch (error) {
+    console.error("Error updating clicks:", error);
+    return null;
+  }
 };
 
 export const createShortUrl = async (req, res) => {
@@ -50,7 +50,7 @@ export const createShortUrl = async (req, res) => {
     try {
       new URL(originalUrl);
     } catch (error) {
-      return res.status(400).json({message:"Invalid URL"})
+      return res.status(400).json({ message: "Invalid URL" })
     }
 
     // 2. validate custom code (only if provided)
@@ -98,14 +98,14 @@ export const createShortUrl = async (req, res) => {
       }
     }
 
-    const OneMonth = 30*24*60*60*1000
+    const OneMonth = 30 * 24 * 60 * 60 * 1000
 
     // 5. save to DB
     const newUrl = await UrlModel.create({
       originalUrl,
-      title:title || originalUrl,
+      title: title || originalUrl,
       shortCode,
-      creator:req.user?._id,
+      creator: req.user?._id,
       expiresAt: new Date(Date.now() + OneMonth)
     });
 
@@ -134,15 +134,15 @@ export const redirectUser = async (req, res) => {
     if (cachedUrl) {
       // Fire and Forget click update (Non-blocking)
       updateClicks(shortCode).catch(err => console.error("Click Update Error:", err));
-      return res.redirect(302, cachedUrl); 
+      return res.redirect(302, cachedUrl);
     }
 
     // 3. Cache Miss: Find in DB
     const url = await UrlModel.findOne({ shortCode });
 
     if (!url) {
-        // Optional: Cache the "404" for 1 minute to prevent DB spam (Negative Caching)
-        return res.status(404).json({ message: "Link not found" });
+      // Optional: Cache the "404" for 1 minute to prevent DB spam (Negative Caching)
+      return res.status(404).json({ message: "Link not found" });
     }
 
     // 4. Expiry Check (DO THIS BEFORE CACHING)
@@ -152,11 +152,11 @@ export const redirectUser = async (req, res) => {
 
     // 5. Store in Redis with TTL (e.g., 24 hours = 86400 seconds)
     // This prevents memory leaks
-    await redis.set(shortCode, url.originalUrl,{ex:36000});
+    await redis.set(shortCode, url.originalUrl, { ex: 36000 });
 
     // 6. Update clicks and Redirect
     updateClicks(shortCode).catch(err => console.error("Click Update Error:", err));
-    
+
     return res.redirect(302, url.originalUrl);
 
   } catch (error) {
@@ -165,6 +165,22 @@ export const redirectUser = async (req, res) => {
   }
 };
 
-export const getUserUrls = async(req,res) =>{
-  
+export const getUserUrls = async (req, res) => {
+  try {
+    // get creatorId 
+    const userId = req.user._id;
+
+    // fetch all urls from database
+    const urls = await UrlModel.find({ creator: userId })
+      .sort({ createdAt: -1 }) // Newest first
+      .select("-__v");
+
+    //send all urls as a response
+
+    return res.status(201).json({success:true,urls,count:urls.length})
+
+  } catch (error) {
+    console.log(`Dashboard Error ${error}`);
+    return res.status(500).json({message:"Internal server Error"});
+  }
 }
