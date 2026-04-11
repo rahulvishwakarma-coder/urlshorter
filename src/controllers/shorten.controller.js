@@ -100,6 +100,15 @@ export const createShortUrl = async (req, res) => {
 
     const OneMonth = 30 * 24 * 60 * 60 * 1000
 
+    // 0. Token limit check
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    if (req.user.tokensUsed >= req.user.tokenLimit) {
+      return res.status(403).json({ message: "Token limit reached. Please upgrade your account." });
+    }
+
     // 5. save to DB
     const newUrl = await UrlModel.create({
       originalUrl,
@@ -109,9 +118,13 @@ export const createShortUrl = async (req, res) => {
       expiresAt: new Date(Date.now() + OneMonth)
     });
 
-    // 6. response
+    // 6. Update user token count
+    await req.user.updateOne({ $inc: { tokensUsed: 1 } });
+
+    // 7. response
     return res.status(201).json({
       shortUrl: `${process.env.BASE_URL}/${newUrl.shortCode}`,
+      remainingTokens: req.user.tokenLimit - (req.user.tokensUsed + 1)
     });
   } catch (error) {
     console.log(`Error during createShort URL ${error}`)

@@ -37,7 +37,8 @@ export const register = async (req, res) => {
         const { email, password, fullName } = req.body;
 
         // 2. Check all required fields are not empty
-        if ([fullName, email, password].some((field) => field?.trim() === "")) {
+        if (!fullName || !email || !password || 
+            [fullName, email, password].some((field) => typeof field === "string" && field.trim() === "")) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -49,7 +50,6 @@ export const register = async (req, res) => {
         }
 
         // 4. Store user in database
-        // The password will be hashed automatically by the pre-save hook in your User model
         const user = await User.create({
             fullName,
             email,
@@ -62,7 +62,6 @@ export const register = async (req, res) => {
         }
 
         // 6. Sanitize the response
-        // Convert the Mongoose document to a plain JavaScript object to remove sensitive fields
         const sanitizedUser = user.toObject();
         delete sanitizedUser.password;
         delete sanitizedUser.refreshToken;
@@ -74,9 +73,8 @@ export const register = async (req, res) => {
         });
 
     } catch (error) {
-        // Log the error for the developer, but keep the response clean for the user
-        console.error("Registration Error:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+        console.error("Registration Error Detailed:", error);
+        return res.status(500).json({ message: `Internal Server Error: ${error.message}` });
     }
 };
 
@@ -104,7 +102,9 @@ export const login = async (req, res) => {
             _id: user._id,
             email: user.email,
             fullName: user.fullName,
-            isVerified: user.isVerified // Corrected spelling
+            isVerified: user.isVerified, // Corrected spelling
+            tokenLimit: user.tokenLimit,
+            tokensUsed: user.tokensUsed
         };
 
         const options = {

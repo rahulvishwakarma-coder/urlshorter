@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Link as LinkIcon, 
@@ -11,15 +11,25 @@ import {
   ChevronDown, 
   ChevronUp,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  LogOut,
+  Ticket,
+  UserPlus,
+  LogIn
 } from 'lucide-react';
 import axios from 'axios';
 import './App.css';
+import { Auth } from './Auth';
 
 // Configure API base URL - adjust based on your backend environment
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
+// Configure axios globally for credentials
+axios.defaults.withCredentials = true;
+
 function App() {
+  const [user, setUser] = useState<any>(null);
+  const [showAuth, setShowAuth] = useState(false);
   const [originalUrl, setOriginalUrl] = useState('');
   const [title, setTitle] = useState('');
   const [customCode, setCustomCode] = useState('');
@@ -29,8 +39,36 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Check if user is already logged in on mount
+  useEffect(() => {
+    // In a real app, you would fetch the current user profile here
+  }, []);
+
+  const handleLogin = (userData: any) => {
+    setUser(userData);
+    setShowAuth(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/api/auth/v1/logout`);
+      setUser(null);
+    } catch (err) {
+      console.error("Logout failed", err);
+      setUser(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If not logged in, redirect to auth
+    if (!user) {
+      setError("Please login to shorten URLs and manage your links.");
+      setShowAuth(true);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setResult(null);
@@ -43,6 +81,14 @@ function App() {
       });
 
       setResult(response.data.shortUrl);
+      
+      // Update tokens in UI locally
+      if (user) {
+        setUser({
+          ...user,
+          tokensUsed: user.tokensUsed + 1
+        });
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
@@ -58,24 +104,66 @@ function App() {
     }
   };
 
+  if (showAuth && !user) {
+    return (
+      <div className="auth-overlay">
+        <div style={{ position: 'absolute', top: '2rem', left: '2rem' }}>
+           <button onClick={() => setShowAuth(false)} className="copy-btn" style={{ padding: '0.5rem 1rem' }}>
+             ← Back to Home
+           </button>
+        </div>
+        <Auth onLogin={handleLogin} apiBaseUrl={API_BASE_URL} />
+      </div>
+    );
+  }
+
   return (
     <div className="app-wrapper">
       <nav className="navbar">
         <div className="container nav-content">
-          <div className="logo">
+          <div className="logo" onClick={() => setShowAuth(false)} style={{ cursor: 'pointer' }}>
             <Scissors className="logo-icon" size={24} />
             <span>Short.ly</span>
           </div>
-          <div className="nav-links">
-            <a href="https://github.com/rahulvishwakarma-coder/urlshorter" target="_blank" rel="noopener noreferrer" className="copy-btn">
-              <BarChart3 size={20} />
-            </a>
+          <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            {user ? (
+              <>
+                <div className="token-badge" style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem', 
+                  background: 'rgba(134, 59, 255, 0.1)', 
+                  padding: '0.5rem 1rem', 
+                  borderRadius: '20px',
+                  border: '1px solid var(--primary-glow)',
+                  fontSize: '0.9rem'
+                }}>
+                  <Ticket size={16} color="var(--primary)" />
+                  <span style={{ fontWeight: 600 }}>{user.tokenLimit - user.tokensUsed} Tokens Left</span>
+                </div>
+                <button onClick={handleLogout} className="logout-btn" style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <LogOut size={20} />
+                  <span>Logout</span>
+                </button>
+              </>
+            ) : (
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button onClick={() => setShowAuth(true)} className="nav-btn-text" style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600 }}>
+                  <LogIn size={18} />
+                  <span>Login</span>
+                </button>
+                <button onClick={() => setShowAuth(true)} className="submit-btn" style={{ marginTop: 0, padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
+                  <UserPlus size={18} />
+                  <span>Get Started</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </nav>
 
       <main className="container">
-        <section className="hero-section">
+        <section className="hero-section" style={{ paddingTop: '4rem' }}>
           <motion.h1 
             className="hero-title"
             initial={{ opacity: 0, y: 20 }}
@@ -84,15 +172,14 @@ function App() {
           >
             Shorten your links,<br />expand your reach.
           </motion.h1>
-          <motion.p 
-            className="hero-subtitle"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            Create short, memorable, and trackable links in seconds. 
-            The professional way to share your content.
-          </motion.p>
+          {user ? (
+            <p style={{ marginBottom: '2rem', color: 'var(--text-muted)' }}>Welcome back, {user.fullName}!</p>
+          ) : (
+             <p className="hero-subtitle">
+              Create short, memorable, and trackable links in seconds. 
+              The professional way to share your content.
+            </p>
+          )}
 
           <motion.div 
             className="tool-card"
@@ -160,14 +247,14 @@ function App() {
               <button 
                 type="submit" 
                 className="submit-btn"
-                disabled={isLoading || !originalUrl}
+                disabled={isLoading || !originalUrl || (user && user.tokenLimit - user.tokensUsed <= 0)}
               >
                 {isLoading ? (
                   <Loader2 className="loading-spinner" size={20} />
                 ) : (
                   <>
                     <Scissors size={20} />
-                    <span>Shorten URL</span>
+                    <span>{user && user.tokenLimit - user.tokensUsed <= 0 ? 'Out of Tokens' : 'Shorten URL'}</span>
                   </>
                 )}
               </button>
