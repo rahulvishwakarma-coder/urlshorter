@@ -197,3 +197,45 @@ export const getUserUrls = async (req, res) => {
     return res.status(500).json({message:"Internal server Error"});
   }
 }
+
+export const deleteUrls = async (req, res) => {
+  try {
+    // 1. Get the shortCode from the request body
+    const { shortCode } = req.body;
+    
+    // 2. Get the user's ID (Assuming you have authentication middleware that sets req.user)
+    // If your auth setup is different, adjust this variable accordingly!
+    const userId = req.user._id; 
+
+    // 3. Find and delete with TWO conditions (await is crucial here!)
+    const deletedUrl = await UrlModel.findOneAndDelete({
+      shortCode: shortCode,
+      creator: userId      // This ensures only the owner can delete this specific URL
+    });
+
+    // 4. Check if a document was actually found and deleted
+    if (!deletedUrl) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "URL not found or you are not authorized to delete it." 
+      });
+    }
+    
+    await redis.del(shortCode);
+
+    // 5. Send a success response back to the client
+    return res.status(200).json({ 
+      success: true, 
+      message: "URL successfully deleted.",
+      deletedUrl 
+    });
+
+  } catch (error) {
+    // 6. Handle any server/database errors safely
+    console.error("Error deleting URL:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error." 
+    });
+  }
+};
