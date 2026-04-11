@@ -50,9 +50,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, apiBaseUrl }) => {
   };
 
   return (
-    <div className="auth-container" style={{ maxWidth: '450px', margin: '6rem auto', padding: '0 1.5rem' }}>
+    <div className="auth-container-wrapper">
       <motion.div 
-        className="tool-card"
+        className="tool-card auth-card"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
