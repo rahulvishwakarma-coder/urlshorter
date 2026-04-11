@@ -203,3 +203,13 @@ export const refreshToken = async (req, res) => {
         return res.status(401).json({message:"Invalid or expired refresh token"})
     }
 };
+
+export const getCurrentUser = async (req, res) => {
+    return res
+        .status(200)
+        .json({
+            success: true,
+            user: req.user,
+            message: "User fetched successfully"
+        });
+};
