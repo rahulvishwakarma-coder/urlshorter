@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
   res.redirect("https://github.com/rahulvishwakarma-coder/urlshorter");
   // res.json({ message: 'hello this is urlshorter application' });
 });
-// app.get("/:shortCode",redirectUser)
+app.get("/:shortCode",redirectUser)
 app.use("/api/url",urlRouter);
 app.use("/api/auth/v1",userRouter);
 

@@ -134,7 +134,7 @@ export const createShortUrl = async (req, res) => {
 
 export const redirectUser = async (req, res) => {
   try {
-    const { shortCode } = req.body;
+    const { shortCode } = req.params;
 
     // 1. Reserved routes check
     const reservedRoutes = ["api", "admin", "dashboard", "auth"];
