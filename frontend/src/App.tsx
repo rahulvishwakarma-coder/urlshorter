@@ -340,9 +340,17 @@ function App() {
                         exit={{ opacity: 0 }}
                       >
                         <div className="result-info">
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Your shortened URL:</p>
-                          <a href={result} target="_blank" rel="noopener noreferrer" className="short-url">
-                            {result} <ExternalLink size={14} style={{ display: 'inline' }} />
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                            Your shortener URL:
+                          </p>
+                          <a
+                            href={result}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="short-url"
+                          >
+                            {result}{' '}
+                            <ExternalLink size={14} style={{ display: 'inline' }} />
                           </a>
                         </div>
                         <button 
