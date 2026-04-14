@@ -74,6 +74,13 @@ function App() {
             />
           )}
         </AnimatePresence>
+
+        {/* ✅ Copied Feedback */}
+        {copied && (
+          <div className="copied-toast">
+            Copied!
+          </div>
+        )}
       </main>
 
       <Footer />
