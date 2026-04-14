@@ -490,7 +490,7 @@ function App() {
                       >
                         <div className="result-info">
                           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                            Your shortened URL:
+                            Your shortener URL:
                           </p>
                           <a
                             href={result}
