@@ -23,8 +23,8 @@ import {
   Calendar
 } from 'lucide-react';
 import axios from 'axios';
-import './App.css';
 import { Auth } from './Auth';
+import { Footer } from './Footer';
 
 // Configure API base URL - adjust based on your backend environment
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
@@ -462,9 +462,7 @@ function App() {
         </AnimatePresence>
       </main>
 
-      <footer style={{ padding: '2rem 0', textAlign: 'center', borderTop: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-        <p>© 2026 Short.ly - Modern URL Shortener. Built with React & Node.js</p>
-      </footer>
+      <Footer />
     </div>
   );
 }
