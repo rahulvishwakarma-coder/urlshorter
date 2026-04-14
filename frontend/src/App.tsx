@@ -50,6 +50,12 @@ interface ApiErrorResponse {
   message?: string;
 }
 
+interface RedirectedResponse {
+  originalUrl?: string;
+  url?: string;
+  redirectUrl?: string;
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -76,6 +82,7 @@ function App() {
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [redirectingId, setRedirectingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -110,6 +117,45 @@ function App() {
       console.error('Failed to fetch history', err);
     } finally {
       setIsHistoryLoading(false);
+    }
+  };
+
+  /**
+   * Calls /api/url/redirected with shortCode in the body,
+   * then opens the resolved destination URL in a new tab.
+   */
+  const handleRedirect = async (shortCode: string, urlId: string, fallbackUrl: string) => {
+    setRedirectingId(urlId);
+    try {
+      const response = await axios.get<RedirectedResponse>(
+        `${API_BASE_URL}/api/url/redirected`,
+        {
+          data: { shortCode },
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      // Support multiple possible response shapes
+      const destination =
+        response.data?.originalUrl ||
+        response.data?.url ||
+        response.data?.redirectUrl ||
+        fallbackUrl;
+
+      window.open(destination, '_blank', 'noopener,noreferrer');
+
+      // Update click count locally for instant feedback
+      setUserUrls((prev) =>
+        prev.map((u) =>
+          u._id === urlId ? { ...u, clicks: u.clicks + 1 } : u
+        )
+      );
+    } catch (err) {
+      console.error('Redirect failed, falling back to original URL', err);
+      // Graceful fallback: open the original URL directly
+      window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+    } finally {
+      setRedirectingId(null);
     }
   };
 
@@ -557,6 +603,7 @@ function App() {
                     {userUrls.map((url) => {
                       const isDeleting = deletingId === url._id;
                       const isConfirming = deleteConfirmId === url._id;
+                      const isRedirecting = redirectingId === url._id;
 
                       return (
                         <motion.div
@@ -585,7 +632,7 @@ function App() {
                                 <span>{url.clicks} clicks</span>
                               </div>
 
-                              {/* Delete Button — outline used for dynamic border to avoid duplicate style key */}
+                              {/* Delete Button */}
                               <button
                                 onClick={() => handleDeleteUrl(url.shortCode, url._id)}
                                 disabled={isDeleting}
@@ -636,19 +683,39 @@ function App() {
                             <div className="url-short-group">
                               <span className="short-label">Short URL</span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <a
-                                  href={`${API_BASE_URL}/${url.shortCode}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                {/* ── Updated: calls /api/url/redirected with shortCode in body ── */}
+                                <button
+                                  onClick={() =>
+                                    handleRedirect(url.shortCode, url._id, url.originalUrl)
+                                  }
+                                  disabled={isRedirecting}
                                   className="short-value"
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: isRedirecting ? 'wait' : 'pointer',
+                                    padding: 0,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    opacity: isRedirecting ? 0.6 : 1,
+                                  }}
+                                  title="Open shortened link"
                                 >
+                                  {isRedirecting ? (
+                                    <Loader2 size={14} className="loading-spinner" />
+                                  ) : (
+                                    <ExternalLink size={14} />
+                                  )}
                                   {url.shortCode}
-                                </a>
+                                </button>
+
                                 <button
                                   onClick={() =>
                                     copyToClipboard(`${API_BASE_URL}/${url.shortCode}`)
                                   }
                                   className="mini-copy-btn"
+                                  title="Copy short URL"
                                 >
                                   <Copy size={14} />
                                 </button>

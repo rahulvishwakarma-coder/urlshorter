@@ -109,7 +109,7 @@ export const login = async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production", // Best practice
+            secure:true, // Best practice
             sameSite: "none"
         };
 
