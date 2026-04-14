@@ -110,7 +110,7 @@ export const login = async (req, res) => {
         const options = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production", // Best practice
-            // sameSite: "lax"
+            sameSite: "none"
         };
 
         // 5. Set BOTH Cookies
